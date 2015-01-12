@@ -74,8 +74,7 @@ stepGamePlay e ({player, pills} as g) =
 
 defaultPlayer : Pill
 defaultPlayer = {defaultPill | col <- black
-                             , vel <- (0, 30)
-                             , pos <- (0, -hHeight) }
+                             , pos <- (0, -hHeight)}
 
 defaultPill : Pill
 defaultPill = {pos = (0, hHeight)
@@ -110,7 +109,8 @@ stepPlayer (x, y) p =  {p | pos <- (toFloat x, toFloat y)}
 
 overlaps : Pill -> Pill -> Bool
 overlaps player pill =
-  (vecLen <| vecSub player.pos pill.pos) < player.rad + pill.rad
+  let distance = vecLen <| vecSub player.pos pill.pos
+  in distance < player.rad + pill.rad
 
 isVisible : Pill -> Bool
 isVisible {pos, rad} = snd pos + rad > -hHeight
@@ -119,6 +119,10 @@ renderPill {pos,rad,col} =
   circle rad |> filled col
              |> move pos
 
+renderScore : Int -> Form
+renderScore s =
+  renderText 0 4 (toString s)
+
 renderText : Float -> Float -> String -> Form
 renderText y scl str =
   Text.fromString str |> Text.color gray
@@ -126,10 +130,6 @@ renderText y scl str =
                       |> toForm
                       |> scale scl
                       |> move (0, y)
-
-renderScore : Int -> Form
-renderScore s =
-  renderText 0 4 (toString s)
 
 relativeMouse : (Int, Int) -> (Int, Int) -> (Int, Int)
 relativeMouse (ox, oy) (x, y) = (x - ox, -(y - oy))
