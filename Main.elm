@@ -4,6 +4,7 @@ import Graphics.Element (..)
 import List (map, filter, partition, any, length, (::), isEmpty)
 import Mouse
 import Random
+import Random (Seed)
 import Signal (Signal, (<~), (~), foldp, sampleOn, merge)
 import Text
 import Time (Time, fps, inSeconds, every, second)
@@ -24,12 +25,13 @@ defaultGame : Game
 defaultGame = {player = defaultPlayer
               ,pills = []
               ,score = 0
-              ,state = Play}
+              ,state = Play
+              ,seed = Random.initialSeed 1}
 
 events : Signal Event
 events = merge
   (Input <~ input)
-  (Spawn << randomPill <~ every (0.25 * second))
+  (always Spawn <~ every (0.25 * second))
 
 input : Signal GameInput
 input =
@@ -46,11 +48,11 @@ render (sw, sh) g =
     |> container sw sh middle
     |> color lightGray
 
-type Event = Input GameInput | Spawn Pill
+type Event = Input GameInput | Spawn
 
 type alias GameInput = (Time, (Int, Int))
 
-type alias Game = {player: Pill, pills: List Pill, score: Int, state: State}
+type alias Game = {player: Pill, pills: List Pill, score: Int, state: State, seed: Seed}
 
 type alias Pill = {pos: Vec, vel: Vec, rad: Float, col: Color}
 
@@ -69,8 +71,10 @@ stepGamePlay e ({player, pills} as g) =
                   , pills  <- map (stepPill t) untouched
                   , score <- g.score + length blues}
       in if isEmpty reds then g' else {g' | state <- Over}
-    Spawn p ->
-      {g | pills <- p :: pills}
+    Spawn ->
+      let (p, seed') = randomPill g.seed
+      in {g | pills <- p :: pills
+            , seed <- seed'}
 
 defaultPlayer : Pill
 defaultPlayer = {defaultPill | col <- black
@@ -82,13 +86,12 @@ defaultPill = {pos = (0, hHeight)
               ,rad = 15
               ,col = lightRed}
 
-randomPill : Time -> Pill
-randomPill t =
-  let seed = Random.initialSeed (round t)
-      xRange = (Random.float -hWidth hWidth)
-      probability = (Random.float 0 1)
+randomPill : Seed -> (Pill, Seed)
+randomPill seed =
+  let xRange = Random.float -hWidth hWidth
+      probability = Random.float 0 1
       ((x, p), seed') = Random.generate (Random.pair xRange probability) seed
-  in newPill x (if p < 0.1 then lightBlue else defaultPill.col)
+  in (newPill x (if p < 0.1 then lightBlue else defaultPill.col), seed')
 
 newPill : Float -> Color -> Pill
 newPill x col =
