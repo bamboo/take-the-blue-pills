@@ -23,10 +23,10 @@ stepGame e g =
 
 defaultGame : Game
 defaultGame = {player = defaultPlayer
-              ,pills = []
-              ,score = 0
-              ,state = Play
-              ,seed = Random.initialSeed 1}
+              ,pills  = []
+              ,score  = 0
+              ,state  = Play
+              ,seed   = Random.initialSeed 1}
 
 events : Signal Event
 events = merge
@@ -69,12 +69,12 @@ stepGamePlay e ({player, pills} as g) =
           (reds, blues) = partition (\{col} -> col == defaultPill.col) touched
           g' = {g | player <- stepPlayer mp player
                   , pills  <- map (stepPill t) untouched
-                  , score <- g.score + length blues}
+                  , score  <- g.score + length blues}
       in if isEmpty reds then g' else {g' | state <- Over}
     Spawn ->
       let (p, seed') = randomPill g.seed
       in {g | pills <- p :: pills
-            , seed <- seed'}
+            , seed  <- seed'}
 
 defaultPlayer : Pill
 defaultPlayer = {defaultPill | col <- black
