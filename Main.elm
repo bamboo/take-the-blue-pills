@@ -18,16 +18,19 @@ main =
 stepGame : Event -> Game -> Game
 stepGame e g =
   case g.state of
-    Play -> stepGamePlay e g
-    Over -> case e of
-              Click -> defaultGame
-              _     -> g
+    Play  -> stepGamePlay e g
+    _     -> playOnClick e g
+
+playOnClick e g =
+  case e of
+    Click -> {defaultGame | state <- Play}
+    _     -> g
 
 defaultGame : Game
 defaultGame = {player = defaultPlayer
               ,pills  = []
               ,score  = 0
-              ,state  = Play
+              ,state  = Start
               ,seed   = Random.initialSeed 1}
 
 events : Signal Event
@@ -45,7 +48,15 @@ input =
 
 render : (Int, Int) -> Game -> Element
 render (sw, sh) g =
-  let forms = renderScore g.score :: map renderPill (g.player :: g.pills)
+  let text = case g.state of
+               Start -> [renderText 70 3 "Take THem PILls"
+                        ,renderText 0 2 "Click to Play"]
+               Play  -> [score]
+               Over  -> [renderText 70 4 "Game Over"
+                        ,score
+                        ,renderText -70 2 "Click to Restart"]
+      score = renderScore g.score
+      forms =  text ++ map renderPill (g.player :: g.pills)
   in collage width height forms
     |> color white
     |> container sw sh middle
@@ -59,7 +70,7 @@ type alias Game = {player: Pill, pills: List Pill, score: Int, state: State, see
 
 type alias Pill = {pos: Vec, vel: Vec, rad: Float, col: Color}
 
-type State = Play | Over
+type State = Start | Play | Over
 
 type alias Vec = (Float, Float)
 
