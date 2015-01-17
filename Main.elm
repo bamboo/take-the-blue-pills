@@ -5,7 +5,7 @@ import List (map, filter, partition, any, length, (::), isEmpty)
 import Mouse
 import Random
 import Random (Seed)
-import Signal (Signal, (<~), (~), foldp, sampleOn, merge)
+import Signal (Signal, (<~), (~), foldp, sampleOn, mergeMany)
 import Text
 import Time (Time, fps, inSeconds, every, second)
 import Window
@@ -19,7 +19,9 @@ stepGame : Event -> Game -> Game
 stepGame e g =
   case g.state of
     Play -> stepGamePlay e g
-    Over -> g
+    Over -> case e of
+              Click -> defaultGame
+              _     -> g
 
 defaultGame : Game
 defaultGame = {player = defaultPlayer
@@ -29,9 +31,10 @@ defaultGame = {player = defaultPlayer
               ,seed   = Random.initialSeed 1}
 
 events : Signal Event
-events = merge
-  (Input <~ input)
-  (always Spawn <~ every (0.25 * second))
+events =
+  mergeMany [       Input <~ input
+            ,always Click <~ Mouse.clicks
+            ,always Spawn <~ every (0.25 * second)]
 
 input : Signal GameInput
 input =
@@ -48,7 +51,7 @@ render (sw, sh) g =
     |> container sw sh middle
     |> color lightGray
 
-type Event = Input GameInput | Spawn
+type Event = Input GameInput | Spawn | Click
 
 type alias GameInput = (Time, (Int, Int))
 
@@ -71,10 +74,13 @@ stepGamePlay e ({player, pills} as g) =
                   , pills  <- map (stepPill t) untouched
                   , score  <- g.score + length blues}
       in if isEmpty reds then g' else {g' | state <- Over}
+
     Spawn ->
       let (p, seed') = randomPill g.seed
       in {g | pills <- p :: pills
             , seed  <- seed'}
+
+    Click -> g
 
 defaultPlayer : Pill
 defaultPlayer = {defaultPill | col <- black
