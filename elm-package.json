@@ -1,0 +1,13 @@
+{
+    "version": "1.0.0",
+    "summary": "Take THem PILls - a simple game made with Elm",
+    "repository": "https://github.com/bamboo/take-the-blue-pills.git",
+    "license": "BSD3",
+    "source-directories": [
+        "."
+    ],
+    "exposed-modules": [],
+    "dependencies": {
+        "elm-lang/core": "1.1.0 <= v < 2.0.0"
+    }
+}
